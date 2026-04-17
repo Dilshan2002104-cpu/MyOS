@@ -1,9 +1,4 @@
-/* mm/heap.c — Kernel Heap Allocator
- *
- * Implements a simple first-fit linked-list allocator.
- *
- * Phase 3.
- */
+
 
 #include "heap.h"
 #include "paging.h"
@@ -14,26 +9,23 @@
 
 typedef struct heap_header {
     u32 magic;
-    u32 size;       /* data size, excluding header */
+    u32 size;       
     bool is_free;
     struct heap_header *next;
 } heap_header_t;
 
 static heap_header_t *heap_start = NULL;
 
-/* ── Public: Initialisation ──────────────────────────────────────────────── */
 void heap_init(u32 start_addr, u32 size) {
-    /* Step 1: Ensure boundaries are page aligned */
+    
     u32 start = PAGE_UP(start_addr);
     u32 end   = PAGE_ALIGN(start_addr + size);
     u32 real_size = end - start;
 
-    /* Step 2: Map the heap pages into virtual memory */
     for (u32 addr = start; addr < end; addr += PAGE_SIZE) {
         paging_map(addr, pmm_alloc_frame(), PAGE_PRESENT | PAGE_WRITABLE);
     }
 
-    /* Step 3: Initialise the first big block */
     heap_start = (heap_header_t *)start;
     heap_start->magic = HEAP_MAGIC;
     heap_start->size  = real_size - sizeof(heap_header_t);
@@ -43,13 +35,12 @@ void heap_init(u32 start_addr, u32 size) {
     kprintf("  Heap: Initialised at %p, size %u KB\n", start, real_size / 1024);
 }
 
-/* ── Public: Allocation ──────────────────────────────────────────────────── */
 void *kmalloc(u32 size) {
     heap_header_t *curr = heap_start;
 
     while (curr) {
         if (curr->is_free && curr->size >= size) {
-            /* Found a block. Can we split it? */
+            
             if (curr->size >= size + sizeof(heap_header_t) + 16) {
                 heap_header_t *next = (heap_header_t *)((u32)curr + sizeof(heap_header_t) + size);
                 next->magic = HEAP_MAGIC;
@@ -72,15 +63,12 @@ void *kmalloc(u32 size) {
 }
 
 void *kmalloc_aligned(u32 size) {
-    /* For now, a very simple version: just allocate extra and align pointer.
-     * Real implementation would needs to handle headers properly.
-     * To keep it simple for Phase 3, we skip proper aligned free support. */
+    
     void *ptr = kmalloc(size + PAGE_SIZE);
     u32 addr = (u32)ptr;
     return (void *)PAGE_UP(addr);
 }
 
-/* ── Public: Free ────────────────────────────────────────────────────────── */
 void kfree(void *ptr) {
     if (!ptr) return;
 
@@ -92,14 +80,11 @@ void kfree(void *ptr) {
 
     header->is_free = true;
 
-    /* Coalesce with next block if it's also free */
     if (header->next && header->next->is_free) {
         header->size += header->next->size + sizeof(heap_header_t);
         header->next = header->next->next;
     }
 
-    /* Coalesce with previous block would require a doubly linked list.
-     * For Phase 3, simple forward coalescing is enough. */
 }
 
 void heap_dump(void) {

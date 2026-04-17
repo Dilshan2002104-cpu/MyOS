@@ -1,8 +1,12 @@
 #pragma once
-/* drivers/pit.h — Programmable Interval Timer driver (Phase 4) */
 
 #include "../include/types.h"
+#include "../cpu/isr.h"
 
-void pit_init(u32 frequency_hz);
-void pit_sleep_ms(u32 ms);
-u32  pit_get_ticks(void);
+#define PIT_BASE_FREQUENCY 1193180
+
+void pit_init(u32 frequency);
+
+void sleep(u32 ms);
+
+u32 pit_get_ticks(void);

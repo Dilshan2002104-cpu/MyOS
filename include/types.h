@@ -1,5 +1,4 @@
 #pragma once
-/* include/types.h — Common type aliases used kernel-wide */
 
 #include <stdint.h>
 #include <stddef.h>

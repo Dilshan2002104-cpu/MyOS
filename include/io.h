@@ -1,5 +1,4 @@
 #pragma once
-/* include/io.h — Inline x86 port I/O helpers (inb / outb) */
 
 #include "types.h"
 
@@ -23,5 +22,4 @@ static inline u16 inw(u16 port) {
     return ret;
 }
 
-/* Small I/O delay — write to an unused port to give slow hardware time */
 static inline void io_wait(void) { outb(0x80, 0); }

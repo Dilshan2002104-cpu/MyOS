@@ -1,10 +1,4 @@
-/* cpu/isr.c — CPU Exception dispatcher
- *
- * Default handler: prints exception name + register dump, then halts.
- * Custom handlers can be installed per-vector via isr_register_handler().
- *
- * Phase 2.
- */
+
 
 #include "isr.h"
 #include "idt.h"
@@ -12,7 +6,6 @@
 #include "../kernel/kprintf.h"
 #include "../drivers/vga.h"
 
-/* Forward declarations of all 32 stubs (defined in isr.s) */
 extern void isr0(void);  extern void isr1(void);  extern void isr2(void);
 extern void isr3(void);  extern void isr4(void);  extern void isr5(void);
 extern void isr6(void);  extern void isr7(void);  extern void isr8(void);
@@ -25,7 +18,6 @@ extern void isr24(void); extern void isr25(void); extern void isr26(void);
 extern void isr27(void); extern void isr28(void); extern void isr29(void);
 extern void isr30(void); extern void isr31(void);
 
-/* ── Exception names ────────────────────────────────────────────────────── */
 static const char *exception_names[32] = {
     [0]  = "Division by Zero",
     [1]  = "Debug",
@@ -58,13 +50,11 @@ static const char *exception_names[32] = {
     [31] = "Reserved",
 };
 
-/* ── Custom handler table ───────────────────────────────────────────────── */
 static isr_handler_t handlers[32];
 
-/* ── Public: install all 32 CPU exception gates ─────────────────────────── */
 void isr_init(void)
 {
-    /* Table of stub function pointers for bulk registration */
+    
     static void (*stubs[32])(void) = {
         isr0,  isr1,  isr2,  isr3,  isr4,  isr5,  isr6,  isr7,
         isr8,  isr9,  isr10, isr11, isr12, isr13, isr14, isr15,
@@ -76,23 +66,20 @@ void isr_init(void)
         idt_set_gate((u8)i, (u32)stubs[i], GDT_SEL_KCODE, IDT_GATE_INTERRUPT);
 }
 
-/* ── Public: register a custom handler for one vector ───────────────────── */
 void isr_register_handler(u8 num, isr_handler_t handler)
 {
     if (num < 32)
         handlers[num] = handler;
 }
 
-/* ── Public: common C-level exception dispatcher ────────────────────────── */
 void isr_handler(registers_t *regs)
 {
     if (regs->int_no < 32 && handlers[regs->int_no]) {
-        /* Dispatch to registered custom handler */
+        
         handlers[regs->int_no](regs);
         return;
     }
 
-    /* ── Default: kernel panic screen ──────────────────────────────────── */
     vga_set_color(VGA_WHITE, VGA_RED);
     kputs("\n\n  *** KERNEL EXCEPTION ***\n");
 
@@ -103,7 +90,7 @@ void isr_handler(registers_t *regs)
     kprintf("  [#%u] %s\n", regs->int_no, name);
 
     if (regs->int_no == 14) {
-        /* Page Fault: CR2 holds the faulting address */
+        
         u32 cr2;
         __asm__ volatile("mov %%cr2, %0" : "=r"(cr2));
         kprintf("  CR2 (faulting address): 0x%x\n", cr2);
@@ -120,7 +107,6 @@ void isr_handler(registers_t *regs)
 
     kputs("\n  System halted.");
 
-    /* Halt the CPU permanently */
     __asm__ volatile("cli; hlt");
     while (1) {}
 }

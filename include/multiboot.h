@@ -1,5 +1,4 @@
 #pragma once
-/* include/multiboot.h — Multiboot 1 information structure definitions */
 
 #include "types.h"
 
@@ -9,15 +8,6 @@ typedef struct multiboot_header {
     u32 magic;
     u32 flags;
     u32 checksum;
-    u32 header_addr;
-    u32 load_addr;
-    u32 load_end_addr;
-    u32 bss_end_addr;
-    u32 entry_addr;
-    u32 mode_type;
-    u32 width;
-    u32 height;
-    u32 depth;
 } multiboot_header_t;
 
 typedef struct multiboot_mmap_entry {
@@ -32,6 +22,13 @@ typedef struct multiboot_mmap_entry {
     u32 type;
 } __attribute__((packed)) multiboot_memory_map_t;
 
+typedef struct multiboot_module {
+    u32 mod_start;
+    u32 mod_end;
+    u32 string;
+    u32 reserved;
+} __attribute__((packed)) multiboot_module_t;
+
 typedef struct multiboot_info {
     u32 flags;
     u32 mem_lower;
@@ -40,10 +37,22 @@ typedef struct multiboot_info {
     u32 cmdline;
     u32 mods_count;
     u32 mods_addr;
-    u32 num;
-    u32 size;
-    u32 addr;
-    u32 shndx;
+
+    union {
+        struct {
+            u32 num;
+            u32 size;
+            u32 addr;
+            u32 shndx;
+        } elf_sec;
+        struct {
+            u32 tabsize;
+            u32 strsize;
+            u32 addr;
+            u32 reserved;
+        } aout_sym;
+    } u;
+
     u32 mmap_length;
     u32 mmap_addr;
     u32 drives_length;
@@ -60,3 +69,4 @@ typedef struct multiboot_info {
 } __attribute__((packed)) multiboot_info_t;
 
 #define MULTIBOOT_INFO_MEM_MAP 0x00000040
+#define MULTIBOOT_INFO_MODS    0x00000008

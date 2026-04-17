@@ -1,27 +1,19 @@
-/* kernel/kprintf.c — Kernel formatted print
- *
- * A minimal printf-style function for the kernel.
- * Routes all output through the VGA terminal driver.
- *
- * Phase 1.
- */
+
 
 #include "kprintf.h"
 #include "../drivers/vga.h"
 #include <stdarg.h>
 
-/* ── Convenience wrappers ──────────────────────────────────────────────────── */
 void kputchar(char c)        { vga_putchar(c); }
 void kputs(const char *str)  { vga_puts(str); }
 
-/* ── Internal: write an unsigned integer in a given base ──────────────────── */
 static void print_uint(u32 val, u32 base, bool uppercase)
 {
     const char *digits_lo = "0123456789abcdef";
     const char *digits_hi = "0123456789ABCDEF";
     const char *digits    = uppercase ? digits_hi : digits_lo;
 
-    char buf[32];   /* max is 32 binary digits for a u32 */
+    char buf[32];   
     int  i = 0;
 
     if (val == 0) {
@@ -34,24 +26,21 @@ static void print_uint(u32 val, u32 base, bool uppercase)
         val /= base;
     }
 
-    /* digits are in reverse order — print them backwards */
     for (int j = i - 1; j >= 0; j--)
         vga_putchar(buf[j]);
 }
 
-/* ── Internal: write a signed 32-bit integer ─────────────────────────────── */
 static void print_int(i32 val)
 {
     if (val < 0) {
         vga_putchar('-');
-        /* cast to u32 carefully to handle INT32_MIN */
+        
         print_uint((u32)(-(val + 1)) + 1u, 10, false);
     } else {
         print_uint((u32)val, 10, false);
     }
 }
 
-/* ── Public: kprintf ──────────────────────────────────────────────────────── */
 void kprintf(const char *fmt, ...)
 {
     va_list args;
@@ -64,7 +53,7 @@ void kprintf(const char *fmt, ...)
             continue;
         }
 
-        p++;   /* skip the '%' */
+        p++;   
 
         switch (*p) {
         case 'c':
@@ -102,11 +91,11 @@ void kprintf(const char *fmt, ...)
             vga_putchar('%');
             break;
 
-        case '\0':   /* trailing lone % — don't advance past end of string */
+        case '\0':   
             p--;
             break;
 
-        default:     /* unknown specifier — print it literally */
+        default:     
             vga_putchar('%');
             vga_putchar(*p);
             break;

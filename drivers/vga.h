@@ -1,9 +1,7 @@
 #pragma once
-/* drivers/vga.h — VGA text-mode terminal driver (Phase 1) */
 
 #include "../include/types.h"
 
-/* ── Colour palette (4-bit) ─────────────────────────────────────────────────── */
 typedef enum {
     VGA_BLACK         = 0x0,
     VGA_BLUE          = 0x1,
@@ -23,7 +21,6 @@ typedef enum {
     VGA_WHITE         = 0xF,
 } vga_color_t;
 
-/* ── Public API ──────────────────────────────────────────────────────────────── */
 void vga_init(void);
 void vga_clear(void);
 void vga_putchar(char c);
