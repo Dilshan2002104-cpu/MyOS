@@ -1,74 +1,105 @@
 /*
- * kernel.c — Minimal x86 bare-bones kernel
+ * kernel/kernel.c — MyOS kernel entry point
  *
- * Compiled with: gcc -m32 -ffreestanding -fno-stack-protector
- * No standard library is available in this environment.
+ * Phase 1: Demonstrates the VGA terminal driver and kprintf.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#include "../drivers/vga.h"
+#include "kprintf.h"
 
-/* ── VGA Text-Mode Constants ───────────────────────────────────────────────── */
-#define VGA_ADDRESS   ((volatile uint16_t *)0xB8000)
-#define VGA_COLS      80
-#define VGA_ROWS      25
-
-/*
- * A VGA text-mode cell is 16 bits:
- *   Bits 15-8  : attribute byte  (background colour | foreground colour)
- *   Bits  7-0  : ASCII character
- *
- * Colour byte layout (each nibble):
- *   High nibble — background   Low nibble — foreground
- *   0x0 = Black   0x1 = Blue   0x2 = Green  0x3 = Cyan
- *   0x4 = Red     0x5 = Magenta 0x6 = Brown  0x7 = Light Grey
- *   0x8-0xF = bright variants
- */
-#define VGA_COLOR(bg, fg)   (((bg) << 4) | (fg))
-#define VGA_ENTRY(ch, attr) ((uint16_t)(attr) << 8 | (uint8_t)(ch))
-
-/* Palette shortcuts */
-#define COLOR_BLACK        0x0
-#define COLOR_LIGHT_GREEN  0xA
-#define COLOR_WHITE        0xF
-
-/* ── Helper: Write a single character at (col, row) ─────────────────────────── */
-static inline void
-vga_putchar(size_t col, size_t row, char ch, uint8_t attr)
+/* ─── Boot banner ────────────────────────────────────────────────────────── */
+static void print_banner(void)
 {
-    VGA_ADDRESS[row * VGA_COLS + col] = VGA_ENTRY(ch, attr);
+    vga_set_color(VGA_LIGHT_CYAN, VGA_BLACK);
+    kputs("  __  __       ____  ____  \n");
+    kputs(" |  \\/  |_   _/ __ \\/ ___| \n");
+    kputs(" | |\\/| | | | | |  | |___  \n");
+    kputs(" | |  | | |_| | |__| |___) |\n");
+    kputs(" |_|  |_|\\__, |\\____/\\____/ \n");
+    kputs("          |___/             \n");
+    vga_set_color(VGA_DARK_GREY, VGA_BLACK);
+    kputs("  A bare-metal x86 OS built from scratch\n");
+    kputs("\n");
 }
 
-/* ── Clear the entire VGA screen ─────────────────────────────────────────────── */
-static void
-vga_clear(uint8_t attr)
+/* ─── Divider line helper ─────────────────────────────────────────────────── */
+static void print_divider(void)
 {
-    for (size_t row = 0; row < VGA_ROWS; row++)
-        for (size_t col = 0; col < VGA_COLS; col++)
-            vga_putchar(col, row, ' ', attr);
+    vga_set_color(VGA_DARK_GREY, VGA_BLACK);
+    kputs("  ------------------------------------------------\n");
 }
 
-/* ── Print a null-terminated string starting at (col, row) ──────────────────── */
-static void
-vga_print(size_t col, size_t row, const char *str, uint8_t attr)
-{
-    for (size_t i = 0; str[i] != '\0'; i++)
-        vga_putchar(col + i, row, str[i], attr);
-}
-
-/* ── Kernel Entry Point ──────────────────────────────────────────────────────── */
+/* ─── Kernel entry point ─────────────────────────────────────────────────── */
 void kernel_main(void)
 {
-    /* Dark blue background, white text for the whole screen */
-    uint8_t bg_attr  = VGA_COLOR(COLOR_BLACK, COLOR_WHITE);
+    /* Initialise the VGA terminal (clears screen, enables cursor) */
+    vga_init();
 
-    /* Bright green text for the greeting — stands out nicely */
-    uint8_t msg_attr = VGA_COLOR(COLOR_BLACK, COLOR_LIGHT_GREEN);
+    print_banner();
 
-    vga_clear(bg_attr);
+    /* ── Phase status ─────────────────────────────────────────────────── */
+    print_divider();
 
-    /* Print greeting centred on the top row */
-    vga_print(36, 12, "Hello OS!", msg_attr);
+    vga_set_color(VGA_WHITE, VGA_BLACK);
+    kputs("  Phase 0 — Multiboot kernel boot  ");
+    vga_set_color(VGA_LIGHT_GREEN, VGA_BLACK);
+    kputs("[ OK ]\n");
 
-    /* Kernel halts; the infinite-loop / hlt is in boot.s */
+    vga_set_color(VGA_WHITE, VGA_BLACK);
+    kputs("  Phase 1 — VGA terminal + kprintf  ");
+    vga_set_color(VGA_LIGHT_GREEN, VGA_BLACK);
+    kputs("[ OK ]\n");
+
+    vga_set_color(VGA_DARK_GREY, VGA_BLACK);
+    kputs("  Phase 2 -- GDT, IDT, interrupts    [ -- ]\n");
+    kputs("  Phase 3 -- Memory management       [ -- ]\n");
+    kputs("  Phase 4 -- Keyboard + timer        [ -- ]\n");
+    kputs("  Phase 5 -- Virtual file system     [ -- ]\n");
+    kputs("  Phase 6 -- User mode + ELF loader  [ -- ]\n");
+    kputs("  Phase 7 -- System calls            [ -- ]\n");
+    kputs("  Phase 8 -- Shell                   [ -- ]\n");
+
+    print_divider();
+
+    /* ── kprintf format-specifier demo ───────────────────────────────── */
+    vga_set_color(VGA_YELLOW, VGA_BLACK);
+    kputs("\n  kprintf self-test\n");
+    print_divider();
+
+    vga_set_color(VGA_LIGHT_GREY, VGA_BLACK);
+
+    kprintf("  %%s  -> %s\n",  "Hello, kernel!");
+    kprintf("  %%d  -> %d\n",  -42);
+    kprintf("  %%u  -> %u\n",  3141592u);
+    kprintf("  %%x  -> 0x%x\n", 0xDEADBEEFu);
+    kprintf("  %%X  -> 0x%X\n", 0xCAFEBABEu);
+    kprintf("  %%p  -> %p\n",   (void *)0xB8000);
+    kprintf("  %%c  -> %c\n",  'K');
+
+    print_divider();
+
+    /* ── Colour palette demo ─────────────────────────────────────────── */
+    vga_set_color(VGA_YELLOW, VGA_BLACK);
+    kputs("\n  Colour palette\n");
+    print_divider();
+
+    vga_set_color(VGA_LIGHT_GREY, VGA_BLACK);
+    kputs("  ");
+
+    vga_color_t palette[] = {
+        VGA_BLACK,      VGA_BLUE,       VGA_GREEN,      VGA_CYAN,
+        VGA_RED,        VGA_MAGENTA,    VGA_BROWN,      VGA_LIGHT_GREY,
+        VGA_DARK_GREY,  VGA_LIGHT_BLUE, VGA_LIGHT_GREEN,VGA_LIGHT_CYAN,
+        VGA_LIGHT_RED,  VGA_LIGHT_MAGENTA, VGA_YELLOW,  VGA_WHITE,
+    };
+    for (int i = 0; i < 16; i++) {
+        vga_set_color(palette[i], VGA_BLACK);
+        kprintf(" %X ", i);
+    }
+
+    vga_set_color(VGA_LIGHT_GREY, VGA_BLACK);
+    kputs("\n");
+    print_divider();
+
+    /* kernel halts here; boot.s spins in cli+hlt */
 }

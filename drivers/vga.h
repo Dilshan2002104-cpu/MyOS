@@ -3,7 +3,7 @@
 
 #include "../include/types.h"
 
-/* Colour codes (4-bit) */
+/* ── Colour palette (4-bit) ─────────────────────────────────────────────────── */
 typedef enum {
     VGA_BLACK         = 0x0,
     VGA_BLUE          = 0x1,
@@ -23,9 +23,14 @@ typedef enum {
     VGA_WHITE         = 0xF,
 } vga_color_t;
 
+/* ── Public API ──────────────────────────────────────────────────────────────── */
 void vga_init(void);
 void vga_clear(void);
 void vga_putchar(char c);
 void vga_puts(const char *str);
 void vga_set_color(vga_color_t fg, vga_color_t bg);
+void vga_get_color(vga_color_t *fg, vga_color_t *bg);
 void vga_set_cursor(u32 col, u32 row);
+void vga_get_cursor(u32 *col, u32 *row);
+void vga_enable_cursor(void);
+void vga_disable_cursor(void);
