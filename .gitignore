@@ -1,0 +1,21 @@
+# Build output
+build/
+kernel.elf
+kernel.bin
+
+# Host tools (compiled separately, not part of the kernel)
+tools/mkinitrd
+
+# Editor/IDE artefacts
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS X
+.DS_Store
+
+# Initrd image (generated)
+*.img
+initrd.bin
