@@ -39,6 +39,10 @@ _start:
     push 0
     popf
 
+    ; Push Multiboot info pointer and magic number as arguments to kernel_main
+    push ebx
+    push eax
+
     ; Call the C kernel entry point
     call kernel_main
 

@@ -54,6 +54,8 @@ SECTIONS
         *(.bss)
     }
 
+    __kernel_end = .;
+
     /*
      * Discard everything the toolchain emits that we don't need
      * (DWARF debug info, exception tables, etc.).
