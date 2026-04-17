@@ -12,7 +12,7 @@ LD      := ld
 
 ASFLAGS := -f elf32
 CFLAGS  := -m32 -ffreestanding -fno-stack-protector -fno-pic \
-           -Wall -Wextra -std=c11 -O2 \
+           -Wall -Wextra -Wno-unused-parameter -std=c11 -O2 \
            -I./include -I./kernel -I./cpu -I./mm -I./drivers -I./fs
 LDFLAGS := -m elf_i386 -T linker.ld
 
